@@ -9,7 +9,7 @@
 // Required parameters:
 // @raycast.schemaVersion 1
 // @raycast.title Open in Tweetbot
-// @raycast.mode silent
+// @raycast.mode fullOutput
 // @raycast.packageName Tweetbot
 // @raycast.argument1 { "type": "text", "placeholder": "Tweet, User, or Search URL"}
 //
@@ -22,7 +22,7 @@
 // @raycast.authorURL https://github.com/holmnathan
 
 // ----------------------------------------------------------------------------
-const username = ""; // REQUIRED: Add your Twitter username here
+const username = "holmnathan"; // REQUIRED: Add your Twitter username here
 // ----------------------------------------------------------------------------
 
 const { exec } = require("child_process");
@@ -30,8 +30,8 @@ const userUrl = process.argv[2];
 let tweetbotUrl;
 const twitterRegEx = {
   domain: /^https?:(\/\/)?(www|mobile)?\.?twitter\.com\//,
-  tweet: /(?<user>[0-9a-zA-Z_]+\/)?status(es)?\/(?<tweetId>\d+)/,
-  user: /^[0-9a-zA-Z_]+\/?$/i,
+  tweet: /(?<user>[0-9a-zA-Z_]+\/)?status(es)?\/(?<tweetId>\d+)/i,
+  user: /^(?<username>[0-9a-z_]+)\/?/i,
   search: /^search\?q=/,
   arguments: /&.+$/,
 };
@@ -61,11 +61,11 @@ function handleTwitterURL(url) {
   if (url.match(twitterRegEx.tweet)) {
     // Tweet by ID
     tweetbotUrl.type = "status/";
-    tweetbotUrl.query = url.replace(twitterRegEx.tweet, "$<tweetId>");
+    tweetbotUrl.query = twitterRegEx.tweet.exec(url).groups.tweetId;
   } else if (url.match(twitterRegEx.user)) {
     // User profile
     tweetbotUrl.type = "user_profile/";
-    tweetbotUrl.query = url;
+    tweetbotUrl.query = twitterRegEx.user.exec(url).groups.username;
   } else if (url.match(twitterRegEx.search)) {
     // Search query
     tweetbotUrl.type = "search?query=";
@@ -82,6 +82,7 @@ function handleTwitterURL(url) {
 try {
   isValidUrl(userUrl); // Verify user input is Twitter URL
   tweetbotUrl = handleTwitterURL(userUrl); // Convert to Tweetbot URL
+  console.log(tweetbotUrl);
   exec(`open "${tweetbotUrl}"`); // Open URL in Tweetbot
 } catch (error) {
   console.error(error.name);
